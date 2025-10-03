@@ -41,8 +41,8 @@ limit 10;
 
 
 
+-- ADVANCED SQL 
 
--- advanced sql 
 -- 1. view the table (note the missing dates)
 SELECT * FROM sales;
 -- 2. preview the finale results
@@ -118,10 +118,27 @@ SELECT 		cte.dt, sales.num_sales,
  FROM 		cte LEFT JOIN sales ON cte.dt = sales.dt;
  
 -- 8. introduce window functions [WINDOW FUNCTIONS]
-SELECT dt, num_sales FROM sales;
+ SELECT dt, num_sales,
+        ROW_NUMBER() OVER() AS row_num,
+        LAG(num_sales) OVER() AS prior_row,
+        LEAD(num_sales) OVER() AS next_row
+ FROM sales;
  
  
-
+ -- 9. add on two window functions [Final Query]
+ 
+ WITH RECURSIVE cte AS (SELECT CAST('2025-01-01' AS DATE) dt
+			UNION ALL
+			SELECT dt + INTERVAL 1 DAY  
+            FROM cte 
+            WHERE dt < CAST('2025-01-07' AS DATE)
+            )
+		
+SELECT 		cte.dt, -- sales.num_sales,
+			-- COALESCE(sales.num_sales,0) AS sales_estimate,
+--             COALESCE(sales.num_sales, ROUND((SELECT AVG(sales.num_sales) FROM sales),2)) AS sales_estimate_2,
+            COALESCE(sales.num_sales,ROUND((LAG(sales.num_sales) OVER() + LEAD(sales.num_sales) OVER())/2)) AS sales_estimate_3
+ FROM 		cte LEFT JOIN sales ON cte.dt = sales.dt;
 
 
 
